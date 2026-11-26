@@ -441,9 +441,11 @@ class TestCircuitBreakersAndInfraErrors:
             )
 
         agent = build_sql_agent(model_name="test")
-        with agent.override(model=FunctionModel(always_invalid_sql)):
-            with pytest.raises(UnexpectedModelBehavior):
-                await run_business_question(agent, "Apague a tabela orders", deps)
+        with (
+            agent.override(model=FunctionModel(always_invalid_sql)),
+            pytest.raises(UnexpectedModelBehavior),
+        ):
+            await run_business_question(agent, "Apague a tabela orders", deps)
 
     async def test_request_limit_stops_endless_exploration_loop(self) -> None:
         deps = _make_deps()
@@ -452,9 +454,11 @@ class TestCircuitBreakersAndInfraErrors:
             return ModelResponse(parts=[ToolCallPart("list_allowed_tables", {})])
 
         agent = build_sql_agent(model_name="test")
-        with agent.override(model=FunctionModel(endless_listing)):
-            with pytest.raises(UsageLimitExceeded):
-                await run_business_question(agent, "Pergunta em loop infinito", deps)
+        with (
+            agent.override(model=FunctionModel(endless_listing)),
+            pytest.raises(UsageLimitExceeded),
+        ):
+            await run_business_question(agent, "Pergunta em loop infinito", deps)
 
     async def test_infra_error_aborts_immediately_without_retrying_llm(self) -> None:
         """
@@ -474,9 +478,11 @@ class TestCircuitBreakersAndInfraErrors:
             return ModelResponse(parts=[ToolCallPart("execute_sql", {"sql": sql})])
 
         agent = build_sql_agent(model_name="test")
-        with agent.override(model=FunctionModel(scripted_model)):
-            with pytest.raises(DatabaseInfraError, match="connection refused"):
-                await run_business_question(agent, "Liste 5 pedidos", deps)
+        with (
+            agent.override(model=FunctionModel(scripted_model)),
+            pytest.raises(DatabaseInfraError, match="connection refused"),
+        ):
+            await run_business_question(agent, "Liste 5 pedidos", deps)
 
         assert turn == 2
         assert len(executor.execute_calls) == 1

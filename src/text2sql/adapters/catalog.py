@@ -32,11 +32,11 @@ def _mask_sample_value(column_name: str, value: Any) -> Any:
         return None
     if isinstance(value, Decimal):
         return float(value)
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, datetime | date):
         return value.isoformat()
     if isinstance(value, UUID):
         return str(value)
-    if isinstance(value, (bytes, bytearray, memoryview)):
+    if isinstance(value, bytes | bytearray | memoryview):
         return "<binary>"
 
     if isinstance(value, str):
@@ -90,9 +90,8 @@ class PostgresSchemaCatalog:
             ORDER BY n.nspname, c.relname
         """
 
-        async with self._pool.acquire() as conn:
-            async with conn.transaction(readonly=True):
-                rows = await conn.fetch(query, allowed_schemas, allowed_tables)
+        async with self._pool.acquire() as conn, conn.transaction(readonly=True):
+            rows = await conn.fetch(query, allowed_schemas, allowed_tables)
 
         result: list[dict[str, str]] = []
         for row in rows:
@@ -129,27 +128,26 @@ class PostgresSchemaCatalog:
             return "Nenhuma tabela autorizada encontrada para descrever."
 
         sections: list[str] = []
-        async with self._pool.acquire() as conn:
-            async with conn.transaction(readonly=True):
+        async with self._pool.acquire() as conn, conn.transaction(readonly=True):
+            await conn.execute(
+                "SELECT set_config('statement_timeout', $1, true)",
+                str(policy.statement_timeout_ms),
+            )
+            if tenant_id and tenant_id.strip():
                 await conn.execute(
-                    "SELECT set_config('statement_timeout', $1, true)",
-                    str(policy.statement_timeout_ms),
+                    "SELECT set_config('app.current_tenant', $1, true)",
+                    tenant_id.strip(),
                 )
-                if tenant_id and tenant_id.strip():
-                    await conn.execute(
-                        "SELECT set_config('app.current_tenant', $1, true)",
-                        tenant_id.strip(),
-                    )
 
-                for table_name in requested:
-                    section = await self._describe_single_table(
-                        conn,
-                        table_name=table_name,
-                        allowed_schemas=allowed_schemas,
-                        blocked_cols=blocked_cols,
-                    )
-                    if section:
-                        sections.append(section)
+            for table_name in requested:
+                section = await self._describe_single_table(
+                    conn,
+                    table_name=table_name,
+                    allowed_schemas=allowed_schemas,
+                    blocked_cols=blocked_cols,
+                )
+                if section:
+                    sections.append(section)
 
         return "\n\n".join(sections) if sections else "Nenhuma tabela acessível encontrada."
 
@@ -237,7 +235,7 @@ class PostgresSchemaCatalog:
         safe_col_names = [str(row["column_name"]) for row in visible_columns]
         quoted_cols = ", ".join(_quote_ident(col) for col in safe_col_names)
         sample_sql = (
-            f"SELECT {quoted_cols} "
+            f"SELECT {quoted_cols} "  # noqa: S608
             f"FROM {_quote_ident(schema_name)}.{_quote_ident(actual_table)} "
             f"LIMIT $1"
         )

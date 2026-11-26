@@ -167,9 +167,12 @@ class EnforceLimitRule:
 
         if isinstance(limit_node, exp.Limit):
             limit_expr = limit_node.expression
-            if isinstance(limit_expr, exp.Literal) and limit_expr.is_int:
-                if int(limit_expr.this) <= max_rows:
-                    return
+            if (
+                isinstance(limit_expr, exp.Literal)
+                and limit_expr.is_int
+                and int(limit_expr.this) <= max_rows
+            ):
+                return
 
         ctx.ast = ctx.ast.limit(max_rows)
         ctx.limit_injected = True

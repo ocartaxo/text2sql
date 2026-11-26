@@ -42,11 +42,11 @@ class DatabaseInfraError(Exception):
 def _serialize_value(value: Any) -> Any:
     if isinstance(value, Decimal):
         return float(value)
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, datetime | date):
         return value.isoformat()
     if isinstance(value, UUID):
         return str(value)
-    if isinstance(value, (bytes, bytearray, memoryview)):
+    if isinstance(value, bytes | bytearray | memoryview):
         return "<binary>"
     return value
 
@@ -89,14 +89,13 @@ class PostgresQueryExecutor:
         policy: AccessPolicy,
     ) -> ExplainPlanResult:
         try:
-            async with self._pool.acquire() as conn:
-                async with conn.transaction(readonly=True):
-                    await self._configure_transaction(
-                        conn,
-                        tenant_id=tenant_id,
-                        policy=policy,
-                    )
-                    raw_plan = await conn.fetchval(f"EXPLAIN (FORMAT JSON) {sql}")
+            async with self._pool.acquire() as conn, conn.transaction(readonly=True):
+                await self._configure_transaction(
+                    conn,
+                    tenant_id=tenant_id,
+                    policy=policy,
+                )
+                raw_plan = await conn.fetchval(f"EXPLAIN (FORMAT JSON) {sql}")
         except RECOVERABLE_PG_ERRORS as exc:
             raise SafeDatabaseError(self._format_pg_error(exc)) from exc
         except asyncpg.PostgresError as exc:
@@ -120,14 +119,13 @@ class PostgresQueryExecutor:
     ) -> QueryExecutionResult:
         started = time.perf_counter()
         try:
-            async with self._pool.acquire() as conn:
-                async with conn.transaction(readonly=True):
-                    await self._configure_transaction(
-                        conn,
-                        tenant_id=tenant_id,
-                        policy=policy,
-                    )
-                    records = await conn.fetch(sql)
+            async with self._pool.acquire() as conn, conn.transaction(readonly=True):
+                await self._configure_transaction(
+                    conn,
+                    tenant_id=tenant_id,
+                    policy=policy,
+                )
+                records = await conn.fetch(sql)
         except RECOVERABLE_PG_ERRORS as exc:
             raise SafeDatabaseError(self._format_pg_error(exc)) from exc
         except asyncpg.PostgresError as exc:

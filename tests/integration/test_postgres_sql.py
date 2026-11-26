@@ -76,9 +76,8 @@ class TestRowLevelSecurityIsolation:
         ro_pool: asyncpg.Pool,
         table_name: str,
     ) -> None:
-        async with ro_pool.acquire() as conn:
-            async with conn.transaction(readonly=True):
-                count = await conn.fetchval(f"SELECT COUNT(*) FROM public.{table_name}")
+        async with ro_pool.acquire() as conn, conn.transaction(readonly=True):
+            count = await conn.fetchval(f"SELECT COUNT(*) FROM public.{table_name}")  # noqa: S608
 
         assert count == 0
 

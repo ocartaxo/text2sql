@@ -45,9 +45,9 @@ def _normalize_cell(value: Any) -> tuple[str, str]:
         return ("null", "")
     if isinstance(value, bool):
         return ("bool", str(value).lower())
-    if isinstance(value, (int, float, Decimal)):
+    if isinstance(value, int | float | Decimal):
         return ("num", f"{float(value):.2f}")
-    if isinstance(value, (datetime, date)):
+    if isinstance(value, datetime | date):
         return ("date", value.isoformat())
     return ("str", str(value).strip().lower())
 
