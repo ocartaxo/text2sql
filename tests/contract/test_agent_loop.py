@@ -12,6 +12,7 @@ from pydantic_ai.messages import (
     ModelResponse,
     RetryPromptPart,
     ToolCallPart,
+    ToolReturnPart,
 )
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 
@@ -128,7 +129,12 @@ def _make_deps(executor: FakeQueryExecutor | None = None) -> AgentDeps:
 def _retry_messages_in_last_turn(messages: list[ModelMessage]) -> list[str]:
     if not messages or not isinstance(messages[-1], ModelRequest):
         return []
-    return [str(part.content) for part in messages[-1].parts if isinstance(part, RetryPromptPart)]
+    return [
+        str(part.content)
+        for part in messages[-1].parts
+        if isinstance(part, RetryPromptPart)
+        or (isinstance(part, ToolReturnPart) and part.outcome == "retried")
+    ]
 
 
 def _output_tool_name(info: AgentInfo) -> str:
