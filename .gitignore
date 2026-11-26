@@ -1,0 +1,33 @@
+# Ambiente virtual Poetry (criado em .venv via poetry.toml)
+.venv/
+venv/
+ENV/
+
+# Artefatos de build e empacotamento Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+wheels/
+
+# Caches de ferramentas de desenvolvimento e relatórios de testes/evals
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+eval-report.json
+
+# Variáveis de ambiente e segredos locais
+.env
+.env.*
+!.env.example
+
+# IDEs e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+
