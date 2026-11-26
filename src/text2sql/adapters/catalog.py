@@ -7,6 +7,7 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg
+from asyncpg.pool import PoolConnectionProxy
 
 from text2sql.domain.models import AccessPolicy
 
@@ -153,7 +154,7 @@ class PostgresSchemaCatalog:
 
     async def _describe_single_table(
         self,
-        conn: asyncpg.Connection,
+        conn: asyncpg.Connection[Any] | PoolConnectionProxy[Any],
         *,
         table_name: str,
         allowed_schemas: list[str],

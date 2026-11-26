@@ -11,7 +11,7 @@ from text2sql.domain.models import AccessPolicy
 
 @dataclass(slots=True)
 class GuardrailContext:
-    ast: exp.Expression
+    ast: exp.Expr
     policy: AccessPolicy
     referenced_tables: set[str] = field(default_factory=set)
     limit_injected: bool = False

@@ -6,6 +6,7 @@ import json
 import os
 import time
 from collections import Counter
+from collections.abc import AsyncIterator
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from decimal import Decimal
@@ -113,7 +114,7 @@ def _write_summary(outcomes: list[EvalCaseOutcome], title: str) -> None:
 
 
 @pytest.fixture(scope="module")
-async def eval_runtime():
+async def eval_runtime() -> AsyncIterator[dict[str, Any]]:
     dsn = os.environ["EVAL_DATABASE_URL"]
     model_name = os.getenv("EVAL_MODEL", "google-gla:gemini-3.8-flash")
     pool = await asyncpg.create_pool(dsn=dsn, min_size=1, max_size=4)

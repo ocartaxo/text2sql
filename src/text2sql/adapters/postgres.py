@@ -8,6 +8,7 @@ from typing import Any
 from uuid import UUID
 
 import asyncpg
+from asyncpg.pool import PoolConnectionProxy
 
 from text2sql.domain.models import (
     AccessPolicy,
@@ -60,7 +61,7 @@ class PostgresQueryExecutor:
 
     async def _configure_transaction(
         self,
-        conn: asyncpg.Connection,
+        conn: asyncpg.Connection[Any] | PoolConnectionProxy[Any],
         *,
         tenant_id: str,
         policy: AccessPolicy,

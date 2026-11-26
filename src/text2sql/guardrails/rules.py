@@ -162,6 +162,9 @@ class EnforceLimitRule:
     """Injeta ou limita automaticamente o teto de linhas na consulta raiz."""
 
     def apply(self, ctx: GuardrailContext) -> None:
+        if not isinstance(ctx.ast, exp.Query):
+            return
+
         max_rows = ctx.policy.max_rows
         limit_node = ctx.ast.args.get("limit")
 
