@@ -44,9 +44,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             command_timeout=cfg.db_command_timeout_s,
         )
         glossary_text = (
-            cfg.glossary_path.read_text(encoding="utf-8")
-            if cfg.glossary_path.exists()
-            else ""
+            cfg.glossary_path.read_text(encoding="utf-8") if cfg.glossary_path.exists() else ""
         )
 
         app.state.container = AppContainer(

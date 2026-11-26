@@ -45,9 +45,7 @@ def _mask_sample_value(column_name: str, value: Any) -> Any:
 
         if column_name.lower() in PARTIAL_MASK_COLUMNS and len(sanitized) > 3:
             tokens = sanitized.split()
-            masked_tokens = [
-                f"{token[:2]}***" if len(token) > 2 else "***" for token in tokens
-            ]
+            masked_tokens = [f"{token[:2]}***" if len(token) > 2 else "***" for token in tokens]
             return " ".join(masked_tokens)
 
         return sanitized[:60] + ("..." if len(sanitized) > 60 else "")
@@ -124,7 +122,9 @@ class PostgresSchemaCatalog:
         allowed_tables = {t.lower() for t in policy.allowed_tables}
         blocked_cols = {c.lower() for c in policy.blocked_columns}
 
-        requested = sorted({t.strip().lower() for t in table_names if t.strip().lower() in allowed_tables})
+        requested = sorted(
+            {t.strip().lower() for t in table_names if t.strip().lower() in allowed_tables}
+        )
         if not requested:
             return "Nenhuma tabela autorizada encontrada para descrever."
 
@@ -184,9 +184,7 @@ class PostgresSchemaCatalog:
         )
 
         visible_columns = [
-            row
-            for row in columns_rows
-            if str(row["column_name"]).lower() not in blocked_cols
+            row for row in columns_rows if str(row["column_name"]).lower() not in blocked_cols
         ]
         if not visible_columns:
             return None
@@ -248,10 +246,7 @@ class PostgresSchemaCatalog:
         if sample_records:
             ddl_lines.append(f"-- Sample rows (masked, max {self._sample_limit}):")
             for record in sample_records:
-                masked = {
-                    col: _mask_sample_value(col, record[col])
-                    for col in safe_col_names
-                }
+                masked = {col: _mask_sample_value(col, record[col]) for col in safe_col_names}
                 ddl_lines.append(f"--   {masked}")
         else:
             ddl_lines.append("-- Sample rows: (sem linhas visíveis no contexto atual)")

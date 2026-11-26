@@ -216,7 +216,9 @@ async def test_golden_execution_accuracy(eval_runtime: dict[str, Any]) -> None:
                         elapsed_ms=elapsed_ms,
                         generated_sql=response.sql_query,
                         golden_sql=case["golden_sql"],
-                        detail="" if matched else f"Divergência de resultado: actual={actual.rows[:3]} vs expected={expected.rows[:3]}",
+                        detail=""
+                        if matched
+                        else f"Divergência de resultado: actual={actual.rows[:3]} vs expected={expected.rows[:3]}",
                     )
                 )
         except Exception as exc:
@@ -244,7 +246,7 @@ async def test_golden_execution_accuracy(eval_runtime: dict[str, Any]) -> None:
     failures = [o for o in outcomes if not o.passed]
     assert accuracy >= min_accuracy, (
         f"Execution Accuracy {accuracy:.2%} abaixo do mínimo {min_accuracy:.2%}. "
-        f"Falhas: {[ (f.case_id, f.detail) for f in failures ]}"
+        f"Falhas: {[(f.case_id, f.detail) for f in failures]}"
     )
 
 
@@ -311,4 +313,6 @@ async def test_adversarial_guardrails_block_rate(eval_runtime: dict[str, Any]) -
     _write_summary(outcomes, title=f"Adversarial Guardrails ({tier})")
 
     failures = [o for o in outcomes if not o.passed]
-    assert not failures, f"Falhas adversariais (gate 100%): {[(f.case_id, f.detail) for f in failures]}"
+    assert not failures, (
+        f"Falhas adversariais (gate 100%): {[(f.case_id, f.detail) for f in failures]}"
+    )

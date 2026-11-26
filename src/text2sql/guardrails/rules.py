@@ -82,9 +82,7 @@ class AllowedTablesRule:
 
     def apply(self, ctx: GuardrailContext) -> None:
         cte_names = {
-            cte.alias_or_name.lower()
-            for cte in ctx.ast.find_all(exp.CTE)
-            if cte.alias_or_name
+            cte.alias_or_name.lower() for cte in ctx.ast.find_all(exp.CTE) if cte.alias_or_name
         }
         allowed_tables = {t.lower() for t in ctx.policy.allowed_tables}
         allowed_schemas = {s.lower() for s in ctx.policy.allowed_schemas}

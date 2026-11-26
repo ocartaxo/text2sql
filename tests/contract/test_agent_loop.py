@@ -84,7 +84,9 @@ class FakeQueryExecutor:
         policy: AccessPolicy,
     ) -> ExplainPlanResult:
         self.explain_calls.append(sql)
-        cost = self._explain_costs.pop(0) if len(self._explain_costs) > 1 else self._explain_costs[0]
+        cost = (
+            self._explain_costs.pop(0) if len(self._explain_costs) > 1 else self._explain_costs[0]
+        )
         return ExplainPlanResult(
             estimated_cost=cost,
             estimated_rows=10,
@@ -126,11 +128,7 @@ def _make_deps(executor: FakeQueryExecutor | None = None) -> AgentDeps:
 def _retry_messages_in_last_turn(messages: list[ModelMessage]) -> list[str]:
     if not messages or not isinstance(messages[-1], ModelRequest):
         return []
-    return [
-        str(part.content)
-        for part in messages[-1].parts
-        if isinstance(part, RetryPromptPart)
-    ]
+    return [str(part.content) for part in messages[-1].parts if isinstance(part, RetryPromptPart)]
 
 
 def _output_tool_name(info: AgentInfo) -> str:
@@ -207,7 +205,9 @@ class TestModelRetrySelfRepair:
                 )
             if turn == 2:
                 # Recebeu RetryPromptPart e corrige para projeção explícita
-                return ModelResponse(parts=[ToolCallPart("validate_and_explain", {"sql": safe_sql})])
+                return ModelResponse(
+                    parts=[ToolCallPart("validate_and_explain", {"sql": safe_sql})]
+                )
             if turn == 3:
                 return ModelResponse(parts=[ToolCallPart("execute_sql", {"sql": safe_sql})])
             return ModelResponse(
@@ -349,7 +349,9 @@ class TestOutputValidatorGrounding:
         captured_retries: list[str] = []
         turn = 0
 
-        real_sql = "SELECT SUM(total_amount) AS total_revenue FROM orders WHERE status = 'delivered'"
+        real_sql = (
+            "SELECT SUM(total_amount) AS total_revenue FROM orders WHERE status = 'delivered'"
+        )
 
         def scripted_model(messages: list[ModelMessage], info: AgentInfo) -> ModelResponse:
             nonlocal turn
@@ -373,7 +375,9 @@ class TestOutputValidatorGrounding:
                     ]
                 )
             if turn == 2:
-                return ModelResponse(parts=[ToolCallPart("validate_and_explain", {"sql": real_sql})])
+                return ModelResponse(
+                    parts=[ToolCallPart("validate_and_explain", {"sql": real_sql})]
+                )
             if turn == 3:
                 return ModelResponse(parts=[ToolCallPart("execute_sql", {"sql": real_sql})])
             # Retorna sql_query divergente para validar que ensure_grounded_answer corrige pelo audit trail

@@ -183,7 +183,10 @@ class TestTableSchemaAndFunctionBypasses:
         [
             ("SELECT salary FROM payroll", "TABLE_NOT_ALLOWED"),
             # Tabela proibida escondida dentro de CTE
-            ("WITH hidden AS (SELECT salary FROM payroll) SELECT salary FROM hidden", "TABLE_NOT_ALLOWED"),
+            (
+                "WITH hidden AS (SELECT salary FROM payroll) SELECT salary FROM hidden",
+                "TABLE_NOT_ALLOWED",
+            ),
             # Tabela proibida em subconsulta escalar
             ("SELECT id, (SELECT MAX(salary) FROM payroll) FROM orders", "TABLE_NOT_ALLOWED"),
             # Catálogos internos do PostgreSQL

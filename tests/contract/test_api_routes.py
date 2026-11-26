@@ -285,9 +285,7 @@ class TestSyncQueryEndpoint:
         assert "Limite de iterações" in response.json()["detail"]
 
     async def test_post_query_returns_503_on_database_infra_error(self) -> None:
-        failing_executor = FakeQueryExecutor(
-            execute_error=DatabaseInfraError("connection refused")
-        )
+        failing_executor = FakeQueryExecutor(execute_error=DatabaseInfraError("connection refused"))
         app = _build_test_app(executor=failing_executor)
         container: AppContainer = app.state.container
         sql = "SELECT id FROM orders LIMIT 5"
@@ -323,7 +321,9 @@ class TestStreamingSSEEndpoint:
     ) -> None:
         client, app = api_client
         container: AppContainer = app.state.container
-        valid_sql = "SELECT SUM(total_amount) AS total_revenue FROM orders WHERE status = 'delivered'"
+        valid_sql = (
+            "SELECT SUM(total_amount) AS total_revenue FROM orders WHERE status = 'delivered'"
+        )
         turn = 0
 
         def scripted_model_with_retry(
@@ -391,9 +391,7 @@ class TestStreamingSSEEndpoint:
         assert "LIMIT 100" in final_data["sql_query"]
 
     async def test_stream_emits_error_event_on_database_infra_failure(self) -> None:
-        failing_executor = FakeQueryExecutor(
-            explain_error=DatabaseInfraError("pool timeout")
-        )
+        failing_executor = FakeQueryExecutor(explain_error=DatabaseInfraError("pool timeout"))
         app = _build_test_app(executor=failing_executor)
         container: AppContainer = app.state.container
         sql = "SELECT id FROM orders LIMIT 5"
