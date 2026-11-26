@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: text2sql-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_admin_password}
+      POSTGRES_DB: ${POSTGRES_DB:-text2sql_ci}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-text2sql_ci}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: text2sql-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RO_DATABASE_URL: postgresql://text2sql_ro:${RO_DB_PASSWORD:-change_me_in_prod_ro}@postgres:5432/${POSTGRES_DB:-text2sql_ci}
+      LLM_MODEL: ${LLM_MODEL:-google-gla:gemini-3.8-flash}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      ENABLE_OTEL: ${ENABLE_OTEL:-false}
+      OTEL_SERVICE_NAME: text2sql-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-lgtm:4318
+    ports:
+      - "${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Opcional: suba com `docker compose --profile observability up -d` (Grafana em http://localhost:3000)
+  otel-lgtm:
+    image: grafana/otel-lgtm:latest
+    container_name: text2sql-otel-lgtm
+    profiles: ["observability"]
+    restart: unless-stopped
+    ports:
+      - "3000:3000"   # Grafana UI (admin/admin)
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+volumes:
+  pg_data:

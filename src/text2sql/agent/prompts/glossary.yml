@@ -1,0 +1,46 @@
+# src/text2sql/agent/prompts/glossary.yaml
+version: "1.0"
+dialect: postgresql
+
+tenant_isolation:
+  description: >
+    O isolamento multi-tenant é aplicado automaticamente via Row-Level Security (RLS)
+    na sessão PostgreSQL. Nunca tente alterar app.current_tenant nem filtrar dados de
+    outros tenants.
+
+metrics:
+  faturamento_entregue:
+    aliases: ["faturamento total", "receita entregue", "receita líquida", "vendas entregues"]
+    formula: "SUM(orders.total_amount)"
+    default_filter: "orders.status = 'delivered'"
+    notes: "Desconsidera pedidos com status 'canceled', 'processing' ou 'shipped'."
+
+  ticket_medio:
+    aliases: ["valor médio por pedido", "avg ticket", "average order value"]
+    formula: "ROUND(AVG(orders.total_amount)::numeric, 2)"
+    default_filter: "orders.status = 'delivered'"
+    notes: "Use NULLIF em divisões manuais para evitar divisão por zero."
+
+  gasto_por_cliente:
+    aliases: ["clientes que mais gastaram", "ranking de clientes por receita"]
+    formula: "SUM(orders.total_amount)"
+    group_by: ["customers.id", "customers.full_name"]
+    default_filter: "orders.status = 'delivered'"
+    notes: "Agrupe por customers.id além de customers.full_name para evitar colisão de homônimos."
+
+  volume_pedidos:
+    aliases: ["quantidade de pedidos", "total de pedidos"]
+    formula: "COUNT(orders.id)"
+    notes: "Se o usuário não especificar status, informe nas premissas se incluiu ou excluiu cancelados."
+
+status_values:
+  orders.status:
+    - processing: "Pedido criado, ainda não enviado."
+    - shipped: "Pedido enviado, em trânsito."
+    - delivered: "Pedido entregue (base padrão para receita e ticket médio)."
+    - canceled: "Pedido cancelado (excluído de faturamento)."
+
+ambiguity_rules:
+  require_clarification_when:
+    - "Termos subjetivos sem critério definido (ex.: 'melhores clientes', 'principais produtos' sem indicar receita vs. volume)."
+    - "Janelas temporais vagas sem referência (ex.: 'recentemente', 'último período') quando alteram o recorte."

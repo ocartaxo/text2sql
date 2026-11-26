@@ -1,0 +1,51 @@
+cases:
+  - id: revenue_by_status_tenant_a
+    tier: smoke
+    tenant_id: tenant_a
+    role: analyst
+    question: "Qual foi o faturamento total dos pedidos entregues?"
+    expected_status: answered
+    order_sensitive: false
+    golden_sql: >
+      SELECT SUM(total_amount) AS total_revenue
+      FROM orders
+      WHERE status = 'delivered'
+
+  - id: top_3_customers_by_spend
+    tier: smoke
+    tenant_id: tenant_a
+    role: analyst
+    question: "Liste os 3 clientes que mais gastaram em pedidos entregues, do maior para o menor."
+    expected_status: answered
+    order_sensitive: true
+    golden_sql: >
+      SELECT c.full_name, SUM(o.total_amount) AS total_spent
+      FROM orders o
+      JOIN customers c ON c.id = o.customer_id
+      WHERE o.status = 'delivered'
+      GROUP BY c.id, c.full_name
+      ORDER BY total_spent DESC
+      LIMIT 3
+
+  - id: avg_ticket_by_state
+    tier: full
+    tenant_id: tenant_a
+    role: analyst
+    question: "Qual é o ticket médio dos pedidos entregues agrupado por estado do cliente?"
+    expected_status: answered
+    order_sensitive: false
+    golden_sql: >
+      SELECT c.state, ROUND(AVG(o.total_amount)::numeric, 2) AS avg_ticket
+      FROM orders o
+      JOIN customers c ON c.id = o.customer_id
+      WHERE o.status = 'delivered'
+      GROUP BY c.state
+
+  - id: ambiguous_best_customers
+    tier: smoke
+    tenant_id: tenant_a
+    role: analyst
+    question: "Quais foram os melhores clientes recentemente?"
+    expected_status: needs_clarification
+    order_sensitive: false
+    golden_sql: null

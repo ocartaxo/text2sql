@@ -1,0 +1,105 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "text-to-sql-agent"
+version = "0.1.0"
+description = "Agente Text-to-SQL seguro em Python/FastAPI com PydanticAI, guardrails AST (sqlglot), PostgreSQL RLS e regressão de prompts no CI/CD."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12,<3.14"
+authors = [
+    { name = "Otavio Cartaxo", email = "oacartaxo@gmail.com" },
+]
+dependencies = [
+    # Web API & Configurações (src/api/main.py, src/api/schemas.py)
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.7.0",
+    "pyyaml>=6.0.2",
+    # Agente & Provedores LLM (src/agents/orchestrator.py, evals/test_regression.py)
+    "pydantic-ai-slim[google,groq]>=1.0.0",
+    # Banco de Dados & Validação SQL via AST (src/adapters/*, src/guardrails/*)
+    "asyncpg>=0.30.0",
+    "sqlglot>=26.0.0",
+    # Observabilidade OpenTelemetry (src/api/main.py)
+    "opentelemetry-api>=1.29.0",
+    "opentelemetry-sdk>=1.29.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.29.0",
+    "opentelemetry-instrumentation-fastapi>=0.50b0",
+    "opentelemetry-instrumentation-asyncpg>=0.50b0",
+]
+
+[project.scripts]
+text2sql-api = "text2sql.api.main:run"
+
+[tool.poetry]
+packages = [{ include = "text2sql", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-asyncio = "^0.25.0"
+pytest-cov = "^6.0.0"
+httpx = "^0.28.0"
+ruff = "^0.9.0"
+mypy = "^1.14.0"
+types-pyyaml = "^6.0.12"
+asyncpg-stubs = "^0.30.0"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests", "evals"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+    "I",     # isort
+    "UP",    # pyupgrade
+    "B",     # flake8-bugbear
+    "SIM",   # flake8-simplify
+    "ASYNC", # flake8-async (boas práticas com asyncio/FastAPI)
+    "S",     # flake8-bandit (checagens estáticas de segurança)
+]
+ignore = [
+    "E501",  # comprimento de linha tratado pelo formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+"evals/**/*.py" = ["S101", "S105", "S106"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "src"
+strict = true
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sqlglot.*",
+    "opentelemetry.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "module"
+testpaths = ["tests", "evals"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "integration: testes que exigem PostgreSQL real",
+    "eval_smoke: regressão enxuta com LLM em PRs de prompt/tools",
+    "eval_full: suíte completa agendada nightly",
+]
+
